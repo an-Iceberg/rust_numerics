@@ -12,7 +12,7 @@ pub fn deriv(f: fn(f64) -> f64, x: f64, degree: u8) -> f64
   // ToDo: determine h based on f64::EPSILON
   // I think it is more efficient to have a sort of look-up table for the derivatives
   // instead of using newton's formula https://en.wikipedia.org/wiki/Numerical_differentiation#Higher_derivatives
-  let h = 10e-4;
+  let h = 10e-6;
   match degree
   {
     0 => f(x),
@@ -57,12 +57,13 @@ pub fn partial(f: fn(&Vec<f64>) -> f64, x: &Vec<f64>, i: usize, degree: u8) -> f
 fn nCr(n: u64, r: u64) -> f64
 {
   // Note: https://www.geeksforgeeks.org/program-calculate-value-ncr/
-  todo!()
+  fact(n) / (fact(r) * fact(n-r))
 }
 
-fn fact(n: u64) -> u64
+fn fact(n: u64) -> f64
 {
   // Note: https://users.rust-lang.org/t/whats-the-idiomatic-or-preferred-way-of-calculating-factorials/77684/3
+  // https://docs.rs/factorial/latest/factorial/
   todo!()
 }
 
@@ -81,11 +82,13 @@ pub fn int(f: fn(f64) -> f64, a: f64, b: f64, h: f64) -> f64
   for i in 1..n
   { Σ1 += f(x(i)); }
 
-  for (i, j) in (0..n).zip((0..n).skip(1))
+  for (i, j) in (0..=n).zip((0..=n).skip(1))
   { Σ2 += f((x(i) + x(j)) / 2.); }
 
   (h/3.)*((f(a)/2.) + Σ1 + Σ2.mul(2.) + (f(b)/2.))
 }
+
+// Todo: romberg with simpson?
 
 pub fn int_rect(f: fn(f64) -> f64, a: f64, b: f64, h: f64) -> f64
 {
@@ -173,12 +176,25 @@ pub mod linalg
   #[allow(non_snake_case)]
   pub fn mat_to_string(M: &Matrix) -> String
   {
-    todo!()
+    let mut string = "".to_string();
+
+    M.iter()
+      .for_each(|line|
+      {
+        let mut line = vec_to_string(line);
+        line.push('\n');
+        string.push_str(line.as_str());
+      });
+
+    string.chars()
+      .next_back()
+      .unwrap()
+      .to_string()
   }
 
-  pub fn vec_to_string(a: Vector) -> String
+  pub fn vec_to_string(a: &Vector) -> String
   {
-    todo!()
+    format!("{:?}", a)
   }
 
   pub fn zero(n: usize) -> Matrix

@@ -1,3 +1,5 @@
+use std::f64::consts::E;
+
 use crate::num::linalg::Matrix;
 
 mod num;
@@ -28,9 +30,18 @@ fn main()
     vec![4., 5., 6.],
     vec![7., 8., 9.],
   ];
+
   println!("\nA[2][0] ⇒  should:7 is:{}\n", A[2][0]);
   // ↑ this is good, it means we can take the indices 1 to 1 from the math formulas
+
   num::linalg::print_mat(&A);
   // println!("{}", 1e-5);
   // println!("{}", 10e-5);
+  println!("f'(-0.25) should:0.5 is:{} ε:{}", num::deriv(f, -0.25, 1), (num::deriv(f, -0.25, 1) - 0.5).abs());
+  println!("{}", num::deriv(|x| x.powi(3) - x.powi(2), 1., 1));
+
+  let h = 0.01;
+  println!("∫[1,5] e^x dx for h = {} should:145.69487727 is:{}", h, num::int(|x| E.powf(x), 1., 5., h));
+
+  println!("{}", num::linalg::mat_to_string(&A));
 }
