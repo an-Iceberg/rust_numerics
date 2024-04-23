@@ -1,10 +1,10 @@
 use std::f64::consts::E;
 
-use crate::num::linalg::Matrix;
+use crate::num::{deriv, linalg::Matrix};
 
 mod num;
 #[cfg(test)]
-mod numerics_tests;
+mod tests;
 
 fn main()
 {
@@ -44,4 +44,9 @@ fn main()
   println!("∫[1,5] e^x dx for h = {} should:145.69487727 is:{}", h, num::int(|x| E.powf(x), 1., 5., h));
 
   println!("{}", num::linalg::mat_to_string(&A));
+
+  let f: fn(f64) -> f64 = |x| x.powi(3) + (3.*x.powi(2));
+
+  println!("b: {}", deriv(f, 0., 1));
+  println!("{}", deriv(|x| x.powi(2), 26., 2));
 }

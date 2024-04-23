@@ -9,16 +9,37 @@ use std::ops::{Div, Mul};
 
 pub fn deriv(f: fn(f64) -> f64, x: f64, degree: u8) -> f64
 {
-  // ToDo: determine h based on f64::EPSILON
-  // I think it is more efficient to have a sort of look-up table for the derivatives
-  // instead of using newton's formula https://en.wikipedia.org/wiki/Numerical_differentiation#Higher_derivatives
-  let h = 10e-6;
-  match degree
+  if degree == 0
+  { return f(x); }
+
+  // https://en.wikipedia.org/wiki/Numerical_differentiation#Higher_derivatives
+
+  let mut h = 1.;
+  let mut δold = 10.;
+  let mut δnew;
+  let mut f2 = match degree
+    {
+      1 => (f(x+h) - f(x-h)) / (2.*h),
+      2 => (f(x+h) - 2.*f(x) + f(x-h)) / (h.powi(2)),
+      _ => todo!(),
+    };
+  let mut f1 = f2 + 10.;
+
+  loop
+  // for _ in 0..=20
   {
-    0 => f(x),
-    1 => (f(x+h) - f(x-h)) / (2.*h),
-    2 => (f(x+h) - 2.*f(x) + f(x-h)) / (h.powi(2)),
-    _ => todo!(),
+    f2 = match degree
+    {
+      1 => (f(x+h) - f(x-h)) / (2.*h),
+      2 => (f(x+h) - 2.*f(x) + f(x-h)) / (h.powi(2)),
+      _ => todo!(),
+    };
+    δnew = (f1 - f2).abs();
+    if δold < δnew || δnew == 0.
+    { return f2; }
+    δold = δnew;
+    f1 = f2;
+    h /= 10.;
   }
   // Note: 5 point method: (f(x - 2.*h) - 8.*f(x - h) + 8.*f(x + h) - f(x + 2.*h)) / (12. * h)
 }
@@ -206,7 +227,10 @@ pub mod linalg
   {
     #[allow(non_snake_case)]
     let mut M = zero(n);
+
     for i in 0..n { M[i][i] = 1.; }
+    // for (i, _) in M.iter_mut().enumerate().take(n) { M[i][i] = 1.; }
+
     return M;
   }
 
