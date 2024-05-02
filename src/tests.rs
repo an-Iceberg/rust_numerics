@@ -1,11 +1,7 @@
 use crate::num::deriv;
 
 fn approx_eq(a: f64, b: f64, δ: f64) -> bool
-{
-  if a + δ <= b || a - δ >= b
-  { return false; }
-  true
-}
+{ a + δ >= b || a - δ <= b }
 
 #[test]
 fn derivative()

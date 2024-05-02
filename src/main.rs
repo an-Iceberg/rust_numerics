@@ -20,7 +20,7 @@ fn main()
   println!();
   println!("{:?}", num::bisection(f, -10., 0., 1e-20));
   println!();
-  println!("{:?}", num::newton_zero(f, 100., 1e-10));
+  println!("{:?}", num::newton_raphson(f, 100., 1e-10));
   println!();
   println!("{:?}", num::secant_zero(f, 100., 98., 1e-10));
 

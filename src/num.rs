@@ -7,41 +7,75 @@ use std::ops::{Div, Mul};
 // ToDo: create one fn `deriv` which then calls different functions based on parameters
 // such as dergee and which method (standard, 2 point, 5 point)
 
+// https://en.wikipedia.org/wiki/Numerical_differentiation#Higher_derivatives
+pub fn d(f: fn(f64) -> f64,x: f64, h: f64, degree: u8) -> f64
+{
+  match degree
+  {
+    1 => (f(x+h) - f(x-h)) / (2.*h),
+    2 => (f(x+h) - 2.*f(x) + f(x-h)) / (h.powi(2)),
+    n =>
+    {
+      #[allow(non_snake_case)]
+      let mut Σ = 0.;
+      for k in 0..=n
+      {
+        Σ += (-1_f64).powf((k + n).into()) * nCr(n.into(), k.into()) * f(x + (k as f64*h));
+      }
+
+      (1./h.powf(n.into())) * Σ
+    }
+  }
+  // Note: 5 point method: (f(x - 2.*h) - 8.*f(x - h) + 8.*f(x + h) - f(x + 2.*h)) / (12. * h)
+}
+
 pub fn deriv(f: fn(f64) -> f64, x: f64, degree: u8) -> f64
 {
   if degree == 0
   { return f(x); }
 
-  // https://en.wikipedia.org/wiki/Numerical_differentiation#Higher_derivatives
-
-  let mut h = 1.;
-  let mut δold = 10.;
+  let (mut h, mut δold) = (1., 10.);
   let mut δnew;
-  let mut f2 = match degree
-    {
-      1 => (f(x+h) - f(x-h)) / (2.*h),
-      2 => (f(x+h) - 2.*f(x) + f(x-h)) / (h.powi(2)),
-      _ => todo!(),
-    };
+  let mut f2 = d(f, x, h, degree);
   let mut f1 = f2 + 10.;
 
   loop
   // for _ in 0..=20
   {
-    f2 = match degree
-    {
-      1 => (f(x+h) - f(x-h)) / (2.*h),
-      2 => (f(x+h) - 2.*f(x) + f(x-h)) / (h.powi(2)),
-      _ => todo!(),
-    };
+    f2 = d(f, x, h, degree);
     δnew = (f1 - f2).abs();
-    if δold < δnew || δnew == 0.
-    { return f2; }
+    // Value is gaining imprecision again, return previous result
+    if δold < δnew || δnew == 0. { return f1; }
     δold = δnew;
     f1 = f2;
     h /= 10.;
   }
-  // Note: 5 point method: (f(x - 2.*h) - 8.*f(x - h) + 8.*f(x + h) - f(x + 2.*h)) / (12. * h)
+}
+
+pub fn ꝺ(f: fn(&Vec<f64>) -> f64, x: &Vec<f64>, i: usize, h: f64, degree: u8) -> f64
+{
+  d_part(f, x, i, h, degree)
+}
+
+pub fn d_part(f: fn(&Vec<f64>) -> f64, x: &Vec<f64>, i: usize, h: f64, degree: u8) -> f64
+{
+  match degree
+  {
+    0 => f(x),
+    1 =>
+    {
+      let (mut x_plus_h, mut x_minus_h) = (x.clone(), x.clone());
+      x_plus_h[i] += h; x_minus_h[i] -= h;
+      (f(&x_plus_h) - f(&x_minus_h)) / (2. * h)
+    },
+    2 =>
+    {
+      let (mut x_plus_h, mut x_minus_h) = (x.clone(), x.clone());
+      x_plus_h[i] += h; x_minus_h[i] -= h;
+      (f(&x_plus_h) - (2.*f(x)) + f(&x_minus_h)) / h.powi(2)
+    }
+    _ => todo!()
+  }
 }
 
 pub fn partial(f: fn(&Vec<f64>) -> f64, x: &Vec<f64>, i: usize, degree: u8) -> f64
@@ -51,30 +85,11 @@ pub fn partial(f: fn(&Vec<f64>) -> f64, x: &Vec<f64>, i: usize, degree: u8) -> f
     panic!("{}", format!("Index i = {} out of range for x of length {}", i, x.len()));
   }
 
-  let h = 10e-4;
-  match degree
-  {
-    0 => f(x),
-    1 =>
-    {
-      let mut x_plus_h = x.clone();
-      let mut x_minus_h = x.clone();
-      x_plus_h[i] += h;
-      x_minus_h[i] -= h;
-      (f(&x_plus_h) - f(&x_minus_h)) / (2. * h)
-    },
-    2 =>
-    {
-      let mut x_plus_h = x.clone();
-      let mut x_minus_h = x.clone();
-      x_plus_h[i] += h;
-      x_minus_h[i] -= h;
-      (f(&x_plus_h) - (2.*f(x)) + f(&x_minus_h)) / h.powi(2)
-    }
-    _ => todo!()
-  }
+  let h = 1.;
+  ꝺ(f, x, i, h, degree)
 }
 
+#[allow(non_snake_case)]
 fn nCr(n: u64, r: u64) -> f64
 {
   // Note: https://www.geeksforgeeks.org/program-calculate-value-ncr/
@@ -85,7 +100,14 @@ fn fact(n: u64) -> f64
 {
   // Note: https://users.rust-lang.org/t/whats-the-idiomatic-or-preferred-way-of-calculating-factorials/77684/3
   // https://docs.rs/factorial/latest/factorial/
-  todo!()
+  let mut x = 1.;
+  for i in 1..=n { x *= i as f64; }
+  x
+}
+
+pub fn ʃ(f: fn(f64) -> f64, a: f64, b: f64, h: f64) -> f64
+{
+  int(f, a, b, h)
 }
 
 /// Calculates the area under the curve (integral) of the function `f` using
@@ -94,9 +116,7 @@ pub fn int(f: fn(f64) -> f64, a: f64, b: f64, h: f64) -> f64
 {
   let n = ((b - a) / h).ceil() as u64;
   #[allow(non_snake_case)]
-  let mut Σ1 = 0.;
-  #[allow(non_snake_case)]
-  let mut Σ2 = 0.;
+  let (mut Σ1, mut Σ2) = (0., 0.);
 
   let x = |i| a + (i as f64 * h);
 
@@ -106,15 +126,10 @@ pub fn int(f: fn(f64) -> f64, a: f64, b: f64, h: f64) -> f64
   for (i, j) in (0..=n).zip((0..=n).skip(1))
   { Σ2 += f((x(i) + x(j)) / 2.); }
 
-  (h/3.)*((f(a)/2.) + Σ1 + Σ2.mul(2.) + (f(b)/2.))
+  (h/3.)*((f(a)/2.) + Σ1 + (2.*Σ2) + (f(b)/2.))
 }
 
 // Todo: romberg with simpson?
-
-pub fn int_rect(f: fn(f64) -> f64, a: f64, b: f64, h: f64) -> f64
-{
-  todo!()
-}
 
 // Note: https://en.wikipedia.org/wiki/Root-finding_algorithms
 // Note: https://en.wikipedia.org/wiki/Householder%27s_method
@@ -124,8 +139,7 @@ pub fn int_rect(f: fn(f64) -> f64, a: f64, b: f64, h: f64) -> f64
 /// [Formula](https://en.wikipedia.org/wiki/Nested_intervals)
 pub fn bisection(f: fn(f64) -> f64, a: f64, b: f64, tolerance: f64) -> Result<f64, String>
 {
-  let mut a = a;
-  let mut b = b;
+  let (mut a, mut b) = (a, b);
 
   // If both have the same sign we can't know which half to keep searching in
   if (f(a) > 0. && f(b) > 0.) || (f(a) < 0. && f(b) < 0.)
@@ -134,9 +148,7 @@ pub fn bisection(f: fn(f64) -> f64, a: f64, b: f64, tolerance: f64) -> Result<f6
   // a shall be < 0 and b shall be > 0
   if f(a) > 0. && f(b) < 0.
   {
-    let temp = a;
-    a = b;
-    b = temp;
+    std::mem::swap(&mut a, &mut b);
   }
 
   loop
@@ -170,11 +182,11 @@ pub fn secant_zero(f: fn(f64) -> f64, x0: f64, x1: f64, tolerance: f64) -> Optio
     x3 = x2 - ((x2 - x1) / (f(x2) - f(x1))).mul(f(x2));
   }
 
-  return Some(x3);
+  Some(x3)
 }
 
 /// [Formula](https://en.wikipedia.org/wiki/Newton%27s_method#)
-pub fn newton_zero(f: fn(f64) -> f64, x0: f64, tolerance: f64) -> Option<f64>
+pub fn newton_raphson(f: fn(f64) -> f64, x0: f64, tolerance: f64) -> Option<f64>
 {
   // ToDo: fail states
   let mut x1 = x0;
@@ -186,7 +198,7 @@ pub fn newton_zero(f: fn(f64) -> f64, x0: f64, tolerance: f64) -> Option<f64>
     x2 = x1 - f(x1).div(deriv(f, x1, 1));
   }
 
-  return Some(x2);
+  Some(x2)
 }
 
 pub mod linalg
@@ -220,7 +232,7 @@ pub mod linalg
 
   pub fn zero(n: usize) -> Matrix
   {
-    return vec![vec![0.; n]; n];
+    vec![vec![0.; n]; n]
   }
 
   pub fn id(n: usize) -> Matrix
@@ -231,7 +243,7 @@ pub mod linalg
     for i in 0..n { M[i][i] = 1.; }
     // for (i, _) in M.iter_mut().enumerate().take(n) { M[i][i] = 1.; }
 
-    return M;
+    M
   }
 
   #[allow(non_snake_case)]
@@ -242,6 +254,11 @@ pub mod linalg
 
   #[allow(non_snake_case)]
   pub fn lr(M: &Matrix) -> Result<(Matrix, Matrix), String>
+  {
+    todo!()
+  }
+
+  fn householder(v: Vector) -> Matrix
   {
     todo!()
   }
@@ -258,6 +275,7 @@ pub mod linalg
     todo!()
   }
 
+  #[allow(non_snake_case)]
   pub fn print_mat(A: &Matrix)
   {
     A.iter()
