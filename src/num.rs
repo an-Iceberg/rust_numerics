@@ -1,6 +1,7 @@
 // TODO: docs
 // TODO: tests
 // TODO: generics, so that any numeric type can be used
+// TODO: rename this file to `num`
 
 use std::ops::{Div, Mul};
 
@@ -52,11 +53,6 @@ pub fn deriv(f: fn(f64) -> f64, x: f64, degree: u8) -> f64
   }
 }
 
-pub fn ꝺ(f: fn(&Vec<f64>) -> f64, x: &Vec<f64>, i: usize, h: f64, degree: u8) -> f64
-{
-  d_part(f, x, i, h, degree)
-}
-
 pub fn d_part(f: fn(&Vec<f64>) -> f64, x: &Vec<f64>, i: usize, h: f64, degree: u8) -> f64
 {
   match degree
@@ -85,8 +81,10 @@ pub fn partial(f: fn(&Vec<f64>) -> f64, x: &Vec<f64>, i: usize, degree: u8) -> f
     panic!("{}", format!("Index i = {} out of range for x of length {}", i, x.len()));
   }
 
+  // TODO: implement this
+
   let h = 1.;
-  ꝺ(f, x, i, h, degree)
+  d_part(f, x, i, h, degree)
 }
 
 #[allow(non_snake_case)]
@@ -103,11 +101,6 @@ fn fact(n: u64) -> f64
   let mut x = 1.;
   for i in 1..=n { x *= i as f64; }
   x
-}
-
-pub fn ʃ(f: fn(f64) -> f64, a: f64, b: f64, h: f64) -> f64
-{
-  int(f, a, b, h)
 }
 
 /// Calculates the area under the curve (integral) of the function `f` using

@@ -3,5 +3,5 @@
 version = 3
 
 [[package]]
-name = "rust_numerics"
-version = "0.2.0"
+name = "numan"
+version = "0.3.0"
